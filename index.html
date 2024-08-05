@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>钢网丝印固定架生成器</title>
+    <link rel="stylesheet" href="./bulma.min.css" />
+  </head>
+  <body>
+    <script type="module">
+      import OpenSCAD from "./openscad.js";
+      async function run(boardX, boardY, boardThinkness, steelMeshX, steelMeshY, wall, boardOffsetX, boardOffsetY, errorValue) {
+        const instance = await OpenSCAD({ noInitialRun: true });
+        const inputFileTimestamp = Date.now();
+        instance.FS.writeFile(
+          `/input-${inputFileTimestamp}.scad`,
+          `errorValue = ${errorValue};
+boardX = ${boardX};
+boardY = ${boardY};
+boardThinkness = ${boardThinkness};
+steelMeshX = ${steelMeshX};
+steelMeshY = ${steelMeshY};
+wall = ${wall};
+boardOffsetX = ${boardOffsetX};
+boardOffsetY = ${boardOffsetY};
+
+difference() {
+    translate([0,0,-(boardThinkness+wall)/2]) cube([steelMeshX + errorValue + wall, steelMeshY + errorValue + wall, boardThinkness + wall], true);
+    translate([0,0, -errorValue/2]) translate([0,0,boardThinkness / 2 - wall/2 + errorValue / 2]) cube([steelMeshX + errorValue, steelMeshY + errorValue, (boardThinkness + wall + errorValue)], true);
+    translate([boardOffsetX, boardOffsetY, 0]) cube([boardX+errorValue, boardY+errorValue,(boardThinkness + wall) * 4], true);
+    translate([0,-steelMeshY/2,0]) cube([steelMeshX / 4, steelMeshY, wall * 2 + boardThinkness], true);
+    translate([0,-steelMeshY/2,0]) cube([steelMeshX / 4, steelMeshY/16, (wall + boardThinkness) * 4], true);
+}
+`
+        );
+        instance.callMain([`/input-${inputFileTimestamp}.scad`, "--enable=manifold", "-o", `output-${inputFileTimestamp}.stl`]);
+        const output = instance.FS.readFile(`/output-${inputFileTimestamp}.stl`);
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(
+          new Blob([output], { type: "application/octet-stream" }),
+          null
+        );
+        link.download = 'SteelMeshHolder.stl';
+        document.body.append(link);
+        link.click();
+        link.remove();
+      }
+      window.run = run;
+    </script>
+    <script>
+        function callOpenSCAD() {
+            const errorValue = parseFloat(document.getElementById("errorValue").value);
+            const boardThinkness = parseFloat(document.getElementById("boardThinkness").value);
+            const boardX = parseFloat(document.getElementById("boardX").value);
+            const boardY = parseFloat(document.getElementById("boardY").value);
+            const boardOffsetX = parseFloat(document.getElementById("boardOffsetX").value);
+            const boardOffsetY = parseFloat(document.getElementById("boardOffsetY").value);
+            const steelMeshX = parseFloat(document.getElementById("steelMeshX").value);
+            const steelMeshY = parseFloat(document.getElementById("steelMeshY").value);
+            const wall = parseFloat(document.getElementById("wall").value);
+            run(boardX, boardY, boardThinkness, steelMeshX, steelMeshY, wall, boardOffsetX, boardOffsetY, errorValue);
+        }
+    </script>
+    <div class="container is-fluid">
+      <section class="hero">
+        <div class="hero-body">
+          <p class="title">钢网丝印固定架生成器</p>
+        </div>
+      </section>
+      <section class="section">
+        <p class="control"><label class="label">误差扩展</label></p>
+        <div class="field has-addons">
+          <p class="control">
+            <input
+              class="input"
+              type="number"
+              placeholder="误差扩展"
+              value="0.1"
+              id="errorValue"
+            />
+          </p>
+          <p class="control">
+            <a class="button is-static"> mm </a>
+          </p>
+        </div>
+
+        
+        <p class="control"><label class="label">电路板厚度</label></p>
+        <div class="field has-addons">
+          <p class="control">
+            <input
+              class="input"
+              type="number"
+              placeholder="电路板厚度"
+              value="1.6"
+              id="boardThinkness"
+            />
+          </p>
+          <p class="control">
+            <a class="button is-static"> mm </a>
+          </p>
+        </div>
+
+        <p class="control"><label class="label">电路板大小 X</label></p>
+        <div class="field has-addons">
+          <p class="control">
+            <input
+              class="input"
+              type="number"
+              placeholder="电路板大小 X"
+              value="10"
+              id="boardX"
+            />
+          </p>
+          <p class="control">
+            <a class="button is-static"> mm </a>
+          </p>
+        </div>
+        <p class="control"><label class="label">电路板大小 Y</label></p>
+        <div class="field has-addons">
+          <p class="control">
+            <input
+              class="input"
+              type="number"
+              placeholder="电路板大小 Y"
+              value="10"
+              id="boardY"
+            />
+          </p>
+          <p class="control">
+            <a class="button is-static"> mm </a>
+          </p>
+        </div>
+
+        <p class="control"><label class="label">电路板偏移 X</label></p>
+        <div class="field has-addons">
+          <p class="control">
+            <input
+              class="input"
+              type="number"
+              placeholder="电路板偏移 X"
+              value="0"
+              id="boardOffsetX"
+            />
+          </p>
+          <p class="control">
+            <a class="button is-static"> mm </a>
+          </p>
+        </div>
+
+        <p class="control"><label class="label">电路板偏移 Y</label></p>
+        <div class="field has-addons">
+          <p class="control">
+            <input
+              class="input"
+              type="number"
+              placeholder="电路板偏移 Y"
+              value="0"
+              id="boardOffsetY"
+            />
+          </p>
+          <p class="control">
+            <a class="button is-static"> mm </a>
+          </p>
+        </div>
+
+        
+        <p class="control"><label class="label">钢网大小 X</label></p>
+        <div class="field has-addons">
+          <p class="control">
+            <input
+              class="input"
+              type="number"
+              placeholder="钢网大小 Y"
+              value="50"
+              id="steelMeshX"
+            />
+          </p>
+          <p class="control">
+            <a class="button is-static"> mm </a>
+          </p>
+        </div>
+
+        
+        <p class="control"><label class="label">钢网大小 Y</label></p>
+        <div class="field has-addons">
+          <p class="control">
+            <input
+              class="input"
+              type="number"
+              placeholder="钢网大小 Y"
+              value="50"
+              id="steelMeshY"
+            />
+          </p>
+          <p class="control">
+            <a class="button is-static"> mm </a>
+          </p>
+        </div>
+
+        <p class="control"><label class="label">墙厚度</label></p>
+        <div class="field has-addons">
+          <p class="control">
+            <input
+              class="input"
+              type="number"
+              placeholder="墙厚度"
+              value="0.1"
+              id="wall"
+            />
+          </p>
+          <p class="control">
+            <a class="button is-static"> mm </a>
+          </p>
+        </div>
+      </section>
+      <section class="section">
+        <button class="button is-primary" onclick="callOpenSCAD()">生成并下载</button>
+      </section>
+    </div>
+  </body>
+</html>
